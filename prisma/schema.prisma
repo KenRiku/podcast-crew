@@ -1,0 +1,73 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String           @id @default(cuid())
+  name      String
+  email     String           @unique
+  password  String?
+  image     String?
+  plan      String           @default("free")
+  sessions  PodcastSession[]
+  accounts  Account[]
+  createdAt DateTime         @default(now())
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model PodcastSession {
+  id               String            @id @default(cuid())
+  title            String            @default("Untitled Session")
+  userId           String
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status           String            @default("recording")
+  duration         Int?
+  crewCards        CrewCard[]
+  transcriptChunks TranscriptChunk[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model TranscriptChunk {
+  id        String         @id @default(cuid())
+  sessionId String
+  session   PodcastSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  text      String
+  timestamp Float
+  createdAt DateTime       @default(now())
+}
+
+model CrewCard {
+  id        String         @id @default(cuid())
+  sessionId String
+  session   PodcastSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  persona   String
+  content   String
+  source    String?
+  timestamp Float
+  pinned    Boolean        @default(false)
+  createdAt DateTime       @default(now())
+}
